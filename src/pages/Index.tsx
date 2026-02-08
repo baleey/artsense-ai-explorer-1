@@ -11,35 +11,48 @@ interface AnalysisResult {
   cnn: { style: string; confidence: number };
 }
 
-const mockAnalysis = (): Promise<AnalysisResult> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const styles = ["Impressionism", "Cubism", "Pop Art", "Baroque", "Rococo", "Renaissance", "Surrealism", "Abstract"];
-      const randomStyle = () => styles[Math.floor(Math.random() * styles.length)];
-      
-      resolve({
-        logistic: { style: randomStyle(), confidence: Math.floor(Math.random() * 30) + 55 },
-        xgboost: { style: randomStyle(), confidence: Math.floor(Math.random() * 25) + 65 },
-        cnn: { style: randomStyle(), confidence: Math.floor(Math.random() * 15) + 82 },
-      });
-    }, 2500);
-  });
+import axios from "axios"; // Assure-toi que l'import est en haut
+
+const realAnalysis = async (file: File): Promise<AnalysisResult> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post("http://localhost:8000/predict", formData);
+    const data = response.data;
+
+    // On remplit les 3 cartes. Comme tu n'as qu'un modèle CNN pour l'instant, 
+    // on met des valeurs fictives pour Logistic et XGBoost pour ne pas casser l'affichage.
+    return {
+      logistic: { style: "Analyse non dispo.", confidence: 0 },
+      xgboost: { style: "Analyse non dispo.", confidence: 0 },
+      cnn: { 
+        style: data.style, 
+        confidence: data.confidence 
+      },
+    };
+  } catch (error) {
+    console.error("Erreur Backend:", error);
+    throw new Error("Impossible de contacter le serveur Python");
+  }
 };
 
 const Index = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [results, setResults] = useState<AnalysisResult | null>(null);
-
-  const handleAnalyze = useCallback(async () => {
+const handleAnalyze = useCallback(async () => {
     if (!selectedImage) return;
     
     setIsAnalyzing(true);
     setResults(null);
     
     try {
-      const analysisResults = await mockAnalysis();
+      // ON APPELLE LE VRAI BACKEND ICI
+      const analysisResults = await realAnalysis(selectedImage);
       setResults(analysisResults);
+    } catch (err) {
+      alert("Erreur: Vérifie que ton serveur Python est bien lancé (py -3.12 main.py)");
     } finally {
       setIsAnalyzing(false);
     }
@@ -71,18 +84,7 @@ const Index = () => {
               Résultats de l'analyse
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <ResultCard
-                modelName="Logistic Regression"
-                modelType="logistic"
-                predictedStyle={results.logistic.style}
-                confidence={results.logistic.confidence}
-              />
-              <ResultCard
-                modelName="XGBoost"
-                modelType="xgboost"
-                predictedStyle={results.xgboost.style}
-                confidence={results.xgboost.confidence}
-              />
+             
               <ResultCard
                 modelName="CNN - Expert"
                 modelType="cnn"
