@@ -24,7 +24,7 @@ const Footer = () => {
           ))}
         </div>
         <p className="mt-8 text-sm text-muted-foreground">
-          © 2024 ArtSense AI — Analyse d'œuvres d'art par intelligence artificielle
+          © 2026 ArtSense AI — Analyse d'œuvres d'art par intelligence artificielle
         </p>
       </div>
     </footer>
