@@ -18,7 +18,7 @@ const realAnalysis = async (file: File): Promise<AnalysisResult> => {
   formData.append("file", file);
 
   try {
-    const response = await axios.post("http://localhost:8000/predict", formData);
+    const response = await axios.post("https://baleeleey-artsense-ai.hf.space/predict", formData);
     const data = response.data;
 
     // On remplit les 3 cartes. Comme tu n'as qu'un modèle CNN pour l'instant, 
