@@ -5,7 +5,7 @@ import AnalyzeButton from "@/components/AnalyzeButton";
 import ResultCard from "@/components/ResultCard";
 import Footer from "@/components/Footer";
 import axios from "axios";
-
+//
 interface AnalysisResult {
   logistic: { style: string; confidence: number };
   xgboost: { style: string; confidence: number };
