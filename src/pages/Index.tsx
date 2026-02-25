@@ -4,6 +4,7 @@ import UploadZone from "@/components/UploadZone";
 import AnalyzeButton from "@/components/AnalyzeButton";
 import ResultCard from "@/components/ResultCard";
 import Footer from "@/components/Footer";
+import axios from "axios";
 
 interface AnalysisResult {
   logistic: { style: string; confidence: number };
@@ -11,19 +12,30 @@ interface AnalysisResult {
   cnn: { style: string; confidence: number };
 }
 
-const mockAnalysis = (): Promise<AnalysisResult> => {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const styles = ["Impressionism", "Cubism", "Pop Art", "Baroque", "Rococo", "Renaissance", "Surrealism", "Abstract"];
-      const randomStyle = () => styles[Math.floor(Math.random() * styles.length)];
-      
-      resolve({
-        logistic: { style: randomStyle(), confidence: Math.floor(Math.random() * 30) + 55 },
-        xgboost: { style: randomStyle(), confidence: Math.floor(Math.random() * 25) + 65 },
-        cnn: { style: randomStyle(), confidence: Math.floor(Math.random() * 15) + 82 },
-      });
-    }, 2500);
-  });
+const realAnalysis = async (file: File): Promise<AnalysisResult> => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  try {
+    const response = await axios.post(
+      "https://baleeleey-artsense-ai.hf.space/predict",
+      formData
+    );
+
+    const data = response.data;
+
+    return {
+      logistic: { style: "Analyse non dispo.", confidence: 0 },
+      xgboost: { style: "Analyse non dispo.", confidence: 0 },
+      cnn: {
+        style: data.style,
+        confidence: data.confidence,
+      },
+    };
+  } catch (error) {
+    console.error("Erreur Backend:", error);
+    throw new Error("Impossible de contacter le serveur Python");
+  }
 };
 
 const Index = () => {
@@ -33,13 +45,15 @@ const Index = () => {
 
   const handleAnalyze = useCallback(async () => {
     if (!selectedImage) return;
-    
+
     setIsAnalyzing(true);
     setResults(null);
-    
+
     try {
-      const analysisResults = await mockAnalysis();
+      const analysisResults = await realAnalysis(selectedImage);
       setResults(analysisResults);
+    } catch (err) {
+      alert("Erreur: serveur IA indisponible");
     } finally {
       setIsAnalyzing(false);
     }
@@ -49,7 +63,7 @@ const Index = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <main className="flex-1 container max-w-5xl mx-auto px-4 pb-12">
         <Header />
-        
+
         <section className="mb-8">
           <UploadZone
             onImageSelect={setSelectedImage}
@@ -70,7 +84,9 @@ const Index = () => {
             <h2 className="font-serif text-2xl font-semibold text-center text-foreground mb-8">
               Résultats de l'analyse
             </h2>
-           <div className="max-w-lg mx-auto">
+
+            {/* CENTERED CARD — GOOD DESIGN */}
+            <div className="max-w-lg mx-auto">
               <ResultCard
                 modelName="CNN - Expert"
                 modelType="cnn"
@@ -89,4 +105,3 @@ const Index = () => {
 };
 
 export default Index;
-
